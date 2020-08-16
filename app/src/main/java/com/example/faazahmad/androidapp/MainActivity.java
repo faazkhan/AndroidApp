@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,7 +23,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,22 +45,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Button reload = findViewById(R.id.button);
         Button logout = findViewById(R.id.logout);
-
         sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
-
         contactList = new ArrayList<>();
         lv = (ListView) findViewById(R.id.userlist);
 
-        if(!read()) {
-            new GetContacts().execute();
-        }
+        populateList();
 
         reload.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("LongLogTag")
             @Override
             public void onClick(View v) {
                 lv.setAdapter(null);
-                new GetContacts().execute();
+                populateList();
             }
         });
 
@@ -86,11 +86,19 @@ public class MainActivity extends AppCompatActivity {
 
 }
 
+    private void populateList() {
+        if (online()) {
+            new GetContacts().execute();
+        } else {
+            read();
+        }
+    }
+
     private class GetContacts extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            Toast.makeText(MainActivity.this, "Json Data is downloading", Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, "Json Data is downloading", Toast.LENGTH_SHORT).show();
 
         }
 
@@ -146,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
                         public void run() {
                             Toast.makeText(getApplicationContext(),
                                     "Json parsing error: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
+                                    Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
@@ -202,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = sharedpreferences.edit();
 
         Toast.makeText(getApplicationContext(), "Clearing Previous Records from DB.", Toast.LENGTH_SHORT).show();
-        editor.clear();
+        editor.remove("contactList");
         editor.commit();
 
         Toast.makeText(getApplicationContext(), "Saving Latest Records.", Toast.LENGTH_SHORT).show();
@@ -213,5 +221,11 @@ public class MainActivity extends AppCompatActivity {
     public void goToLogin(){
         Intent i = new Intent(this,Login.class);
         startActivity(i);
+    }
+
+    public Boolean online() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.getType() == ConnectivityManager.TYPE_WIFI;
     }
 }

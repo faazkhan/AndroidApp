@@ -7,7 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import static com.example.faazahmad.androidapp.MainActivity.MyPREFERENCES;
@@ -54,4 +53,5 @@ public class Login extends AppCompatActivity {
         Intent i = new Intent(this,MainActivity.class);
         startActivity(i);
     }
+
 }
