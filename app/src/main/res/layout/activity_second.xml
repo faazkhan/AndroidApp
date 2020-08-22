@@ -1,68 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp" >
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="fill_parent"
+    <!-- Thumbnail Image -->
+    <com.android.volley.toolbox.NetworkImageView
+        android:id="@+id/thumbnail"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginRight="8dp"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- Movie Title -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_below="@id/thumbnail"
+        android:layout_marginTop="1dp"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        />
 
+    <!-- Rating -->
+    <TextView
+        android:id="@+id/rating"
+        android:layout_below="@id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
 
-        <TextView
-            android:id="@+id/id"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:padding="10dip"
-            android:textColor="@android:color/black"
-            android:textSize="25dip"
-            android:textStyle="bold" />
+        />
 
-        <TextView android:id="@+id/name"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textSize="25dip"
-            android:textStyle="bold"
-            android:gravity="center_horizontal"
-            android:padding="10dip"
-            android:textColor="@android:color/black"/>
+    <!-- Genre -->
+    <TextView
+        android:id="@+id/genre"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/rating"
+        android:layout_centerHorizontal="true"
 
-        <TextView android:id="@+id/email"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textSize="25dip"
-            android:textStyle="bold"
-            android:gravity="center_horizontal"
-            android:padding="10dip"
-            android:textColor="@android:color/black"/>
+        />
 
-        <TextView android:id="@+id/address"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textSize="25dip"
-            android:textStyle="bold"
-            android:gravity="center_horizontal"
-            android:padding="10dip"
-            android:textColor="@android:color/black"/>
+    <!-- Release Year -->
+    <TextView
+        android:id="@+id/year"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
 
-        <TextView android:id="@+id/gender"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textSize="25dip"
-            android:textStyle="bold"
-            android:gravity="center_horizontal"
-            android:padding="10dip"
-            android:textColor="@android:color/black"/>
+        android:layout_below="@id/genre"
+        />
 
-        <TextView android:id="@+id/phone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textSize="25dip"
-            android:textStyle="bold"
-            android:gravity="center_horizontal"
-            android:padding="10dip"
-            android:textColor="@android:color/black"/>
-
-    </LinearLayout>
-
-</android.support.constraint.ConstraintLayout>
+</RelativeLayout>

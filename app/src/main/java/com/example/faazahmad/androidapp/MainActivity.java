@@ -7,35 +7,40 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.*;
-import com.android.volley.RequestQueue;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.Toast;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.Volley;
+import com.example.faazahmad.androidapp.adapter.CustomAdapter;
+import com.example.faazahmad.androidapp.model.Movie;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
-import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private ListView lv;
-    ArrayList<HashMap<String, String>> contactList;
     SharedPreferences sharedpreferences;
     public static final String MyPREFERENCES = "MyPrefs";
+
+    private static final String url = "https://api.androidhive.info/json/movies.json";
+    private List<Movie> movieList = new ArrayList<Movie>();
+    private CustomAdapter adapter;
 
 
     @Override
@@ -43,19 +48,19 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Button reload = findViewById(R.id.button);
         Button logout = findViewById(R.id.logout);
         sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
-        contactList = new ArrayList<>();
         lv = (ListView) findViewById(R.id.userlist);
+        adapter = new CustomAdapter(this, movieList);
+        lv.setAdapter(adapter);
 
         populateList();
-
         reload.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("LongLogTag")
             @Override
             public void onClick(View v) {
-                lv.setAdapter(null);
                 populateList();
             }
         });
@@ -64,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
             @SuppressLint("LongLogTag")
             @Override
             public void onClick(View v) {
-                sharedpreferences.edit().putBoolean("logged",false).apply();
+                sharedpreferences.edit().putBoolean("logged", false).apply();
                 goToLogin();
             }
         });
@@ -74,27 +79,78 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
 
+                Movie movie = (Movie) adapter.getItem(position);
                 // Launching new Activity on selecting single List Item
-                Intent i = new Intent(getApplicationContext(), SecondActivity.class);
+                Intent i = new Intent(MainActivity.this, SecondActivity.class);
                 // sending data to new activity
-                i.putExtra("contact", contactList.get(position));
+                i.putExtra("movie", movie);
                 startActivity(i);
 
             }
         });
 
+      }
 
-}
+    private JsonArrayRequest fetchMovieData() {
+        return new JsonArrayRequest(url,
+                    new Response.Listener<JSONArray>() {
+                        @Override
+                        public void onResponse(JSONArray response) {
+                            Log.d("Log", response.toString());
+
+                            movieList.clear();
+                            // Parsing json
+                            for (int i = 0; i < response.length(); i++) {
+                                try {
+
+                                    JSONObject obj = response.getJSONObject(i);
+                                    Movie movie = new Movie();
+                                    movie.setTitle(obj.getString("title"));
+                                    movie.setThumbnailUrl(obj.getString("image"));
+                                    movie.setRating("Rating: "+obj.get("rating").toString());
+                                    movie.setYear(""+ obj.getInt("releaseYear"));
+
+                                    // Genre is json array
+                                    JSONArray genreArry = obj.getJSONArray("genre");
+                                    ArrayList<String> genre = new ArrayList<String>();
+                                    for (int j = 0; j < genreArry.length(); j++) {
+                                        genre.add((String) genreArry.get(j));
+                                    }
+                                    movie.setGenre(genre);
+
+                                    // adding movie to movies array
+                                    movieList.add(movie);
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+
+                            Collections.shuffle(movieList);
+                            // notifying list adapter about data changes
+                            // so that it renders the list view with updated data
+                            adapter.notifyDataSetChanged();
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    VolleyLog.d("Error", "Error: " + error.getMessage());
+                    //       hidePDialog();
+
+                }
+            });
+    }
 
     private void populateList() {
         if (online()) {
-            new GetContacts().execute();
+            new GetMovies().execute();
         } else {
             read();
         }
     }
 
-    private class GetContacts extends AsyncTask<Void, Void, Void> {
+   private class GetMovies extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -104,119 +160,54 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... arg0) {
-            HttpHandler sh = new HttpHandler();
-            // Making a request to url and getting response
-            String url = "https://api.androidhive.info/contacts/";
-            String jsonStr = sh.makeServiceCall(url);
-
-            Log.e("", "Response from url: " + jsonStr);
-            if (jsonStr != null) {
-                try {
-                    JSONObject jsonObj = new JSONObject(jsonStr);
-
-                    // Getting JSON Array node
-                    JSONArray contacts = jsonObj.getJSONArray("contacts");
-                    contactList.clear();
-
-                    // looping through All Contacts
-                    for (int i = 0; i < contacts.length(); i++) {
-                        JSONObject c = contacts.getJSONObject(i);
-                        String id = c.getString("id");
-                        String name = c.getString("name");
-                        String email = c.getString("email");
-                        String address = c.getString("address");
-                        String gender = c.getString("gender");
-
-                        // Phone node is JSON Object
-                        JSONObject phone = c.getJSONObject("phone");
-                        String mobile = phone.getString("mobile");
-                        String home = phone.getString("home");
-                        String office = phone.getString("office");
-
-                        // tmp hash map for single contact
-                        HashMap<String, String> contact = new HashMap<>();
-
-                        // adding each child node to HashMap key => value
-                        contact.put("id", id);
-                        contact.put("name", name);
-                        contact.put("email", email);
-                        contact.put("mobile", mobile);
-
-                        // adding contact to contact list
-                        contactList.add(contact);
-
-                    }
-
-                } catch (final JSONException e) {
-                    Log.e("", "Json parsing error: " + e.getMessage());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getApplicationContext(),
-                                    "Json parsing error: " + e.getMessage(),
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-            } else {
-                Log.e("", "Couldn't get json from server.");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(),
-                                "Couldn't get json from server. Check LogCat for possible errors!",
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
-            }
+            AppController.getInstance().addToRequestQueue(fetchMovieData());
             return null;
         }
 
         @Override
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
-            save(contactList);
-            setAdapter();
+            save(movieList);
         }
     }
 
-    private void setAdapter() {
-        ListAdapter adapter = new SimpleAdapter(MainActivity.this, contactList,
-                R.layout.list_item, new String[]{"name"},
-                new int[]{R.id.name});
-        lv.setAdapter(adapter);
-    }
 
     private Boolean read() {
         Toast.makeText(getApplicationContext(), "Reading Local Databases.", Toast.LENGTH_SHORT).show();
         Gson gson = new Gson();
-        String json = sharedpreferences.getString("contactList", "");
+        String json = sharedpreferences.getString("movieList", "");
         if (json.isEmpty()) {
             Toast.makeText(getApplicationContext(), "Local Database is empty.", Toast.LENGTH_SHORT).show();
             return false;
         } else {
-            Type type = new TypeToken<ArrayList<HashMap<String, String>> >() {}.getType();
-            contactList = gson.fromJson(json, type);
-            if(contactList.isEmpty()){
+            Type type = new TypeToken<List<Movie> >() {}.getType();
+            List<Movie> movies = gson.fromJson(json, type);
+            if(movies.isEmpty()){
+                Toast.makeText(getApplicationContext(), "Local List is empty.", Toast.LENGTH_SHORT).show();
                 return false;
             }
-            setAdapter();
+            Log.i("list",""+movies.size());
+            movieList.clear();
+            movieList.addAll(movies);
+            Collections.shuffle(movieList);
+            adapter.notifyDataSetChanged();
             return true;
         }
     }
-    private void save(ArrayList<HashMap<String, String>> contactList){
+    private void save(List<Movie> movieList){
         Gson gson = new Gson();
-        String json = gson.toJson(contactList);
+        String json = gson.toJson(movieList);
         SharedPreferences.Editor editor = sharedpreferences.edit();
 
         Toast.makeText(getApplicationContext(), "Clearing Previous Records from DB.", Toast.LENGTH_SHORT).show();
-        editor.remove("contactList");
+        editor.remove("movieList");
         editor.commit();
 
         Toast.makeText(getApplicationContext(), "Saving Latest Records.", Toast.LENGTH_SHORT).show();
-        editor.putString("contactList",json);
+        editor.putString("movieList",json);
         editor.commit();
     }
+
 
     public void goToLogin(){
         Intent i = new Intent(this,Login.class);
